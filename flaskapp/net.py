@@ -20,16 +20,15 @@ resnet = ResNet50V2(include_top=True,
                     classes=1000)
 
 
-def read_image_files(files_max_count, dir_name):
-    """Чтение изображений из директории"""
-    files = os.listdir(dir_name)
-    files_count = min(files_max_count, len(files))
-    image_box = []
-    for file_i in range(files_count):
-        img_path = os.path.join(dir_name, files[file_i])
-        image_box.append(Image.open(img_path))
+def read_image_files(files_max_count,dir_name):
+    files = [item.name for item in os.scandir(dir_name) if item.is_file()]
+    files_count = files_max_count
+    if(files_max_count>len(files)): # определяем количество файлов не больше max
+        files_count = len(files)
+        image_box = [[]] * files_count
+        for file_i in range(files_count):  # читаем изображения в список
+            image_box[file_i] = Image.open(dir_name + '/' + files[file_i])  # / ??
     return files_count, image_box
-
 
 def getresult(image_box):
     """Обработка изображений через нейросеть"""

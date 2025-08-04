@@ -14,7 +14,7 @@ import base64
 from PIL import Image
 from io import BytesIO
 import json
-
+import lxml.etree as ET
 
 app = Flask(__name__)
 
@@ -51,6 +51,20 @@ class NetForm(FlaskForm):
 @app.route("/")
 def hello():
  return " <html><head></head> <body> Hello World! </body></html>"
+
+@app.route("/apixml",methods=['GET', 'POST'])
+def apixml():
+ #парсим xml файл в dom
+ dom = ET.parse("./static/xml/file.xml")
+ # парсим шаблон в dom
+ xslt = ET.parse("./static/xml/file.xslt")
+ # получаем трансформер
+ transform = ET.XSLT(xslt)
+ # преобразуем xml с помощью трансформера xslt
+ newhtml = transform(dom)
+ # преобразуем из памяти dom в строку, возможно, понадобится указать кодировку
+ strfile = ET.tostring(newhtml)
+ return strfile
 
 @app.route("/data_to")
 def data_to():
@@ -93,29 +107,29 @@ def apinet():
  # возвращаем ответ
  return resp
 
-@app.route("/net",methods=['GET', 'POST'])
+@app.route("/net", methods=['GET', 'POST'])
 def net():
- # создаем объект формы
- form = NetForm()
- # обнуляем переменные, передаваемые в форму
- filename = None
- neurodic = {}
- # проверяем нажатие сабмит и валидацию введенных данных
- if form.validate_on_submit():
-  # файлы с изображениями читаются из каталога static
-  filename = os.path.join('./static', secure_filename(form.upload.data.filename))
-  fcount, fimage = neuronet.read_image_files(10, './static')
-  # передаем все изображения в каталоге на классификацию
-  # можете изменить немного код и передать только загруженный файл
-  decode = neuronet.getresult(fimage)
-  # записываем в словарь данные классификации
-  for elem in decode:
-   neurodic[elem[0][1]] = elem[0][2]
-  # сохраняем загруженный файл
-  form.upload.data.save(filename)
-  # передаем форму в шаблон, так же передаем имя файла и результат работы нейронной
-  # сети, если был нажат сабмит, либо передадим falsy значения
- return render_template('net.html', form=form, image_name=filename, neurodic=neurodic)
+    form = NetForm()
+    filename = None
+    neurodic = {}
+
+    if form.validate_on_submit():
+        # Сохраняем загруженный файл
+        filename = os.path.join('./static', secure_filename(form.upload.data.filename))
+        form.upload.data.save(filename)
+
+        # Открываем только что загруженное изображение
+        img = Image.open(filename)
+
+        # Передаем ОДНО изображение в нейросеть (в списке)
+        decode = neuronet.getresult([img])
+
+        # Очищаем и заполняем словарь результатами
+        neurodic.clear()
+        for elem in decode:
+            neurodic[elem[0][1]] = elem[0][2]
+
+    return render_template('net.html', form=form, image_name=filename, neurodic=neurodic)
 
 if __name__ == "__main__":
  app.run(host='127.0.0.1',port=5000)
