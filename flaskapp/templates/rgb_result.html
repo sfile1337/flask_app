@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RGB Processing Result</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result-container {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .image-comparison {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .image-wrapper {
+            text-align: center;
+            margin: 10px;
+        }
+        .image-wrapper img {
+            max-width: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        .analysis-plot {
+            width: 100%;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .analysis-plot img {
+            max-width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .channel-info {
+            text-align: center;
+            font-size: 18px;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #e9f7ef;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>RGB Processing Result</h1>
+
+    <div class="result-container">
+        <div class="channel-info">
+            Channel order applied: {{ channel_order }}
+        </div>
+
+        <div class="image-comparison">
+            <div class="image-wrapper">
+                <h3>Original Image</h3>
+                <img src="{{ url_for('static', filename='uploads/' + original) }}">
+            </div>
+            <div class="image-wrapper">
+                <h3>Processed Image</h3>
+                <img src="{{ url_for('static', filename='uploads/' + swapped) }}">
+            </div>
+        </div>
+
+        <div class="analysis-plot">
+            <h2>Color Analysis</h2>
+            <img src="data:image/png;base64,{{ analysis_plot }}">
+        </div>
+
+        <div style="text-align: center;">
+            <a href="{{ url_for('rgb_processor') }}" class="btn">Process Another Image</a>
+        </div>
+    </div>
+</body>
+</html>

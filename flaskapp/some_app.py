@@ -15,15 +15,22 @@ from PIL import Image
 from io import BytesIO
 import json
 import lxml.etree as ET
+from flask import Flask, render_template, request, redirect, url_for, flash
+import os
+from werkzeug.utils import secure_filename
+from image_processing.rgb_processor import swap_channels, analyze_image, process_image
 
 app = Flask(__name__)
 
 SECRET_KEY = 'secret'
 app.config['SECRET_KEY'] = SECRET_KEY
 app.config['RECAPTCHA_USE_SSL'] = False
-app.config['RECAPTCHA_PUBLIC_KEY'] = '6LfV7JkrAAAAAE3icdT__B7p__-FXBoGNNWyJZzl'
-app.config['RECAPTCHA_PRIVATE_KEY'] = '6LfV7JkrAAAAAKAiVNyOWd9aS3EufwYJ4RZmqeI8'
+app.config['RECAPTCHA_PUBLIC_KEY'] = ''
+app.config['RECAPTCHA_PRIVATE_KEY'] = ''
 app.config['RECAPTCHA_OPTIONS'] = {'theme': 'white'}
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
+app.secret_key = 'super_secret_key'  # Важно для работы flash-сообщений
 
 
 bootstrap = Bootstrap(app)
@@ -130,6 +137,60 @@ def net():
             neurodic[elem[0][1]] = elem[0][2]
 
     return render_template('net.html', form=form, image_name=filename, neurodic=neurodic)
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+
+@app.route('/rgb', methods=['GET', 'POST'])
+def rgb_processor():
+    if request.method == 'POST':
+        # Проверяем наличие файла в запросе
+        if 'file' not in request.files:
+            flash('Не выбран файл')
+            return redirect(request.url)
+
+        file = request.files['file']
+
+        # Проверяем, что файл имеет допустимое расширение
+        if file.filename == '':
+            flash('Не выбран файл')
+            return redirect(request.url)
+
+        if not allowed_file(file.filename):
+            flash('Допустимы только файлы JPG, JPEG или PNG')
+            return redirect(request.url)
+
+        try:
+            # Сохраняем файл
+            filename = secure_filename(file.filename)
+            upload_dir = app.config['UPLOAD_FOLDER']
+            os.makedirs(upload_dir, exist_ok=True)
+            filepath = os.path.join(upload_dir, filename)
+            file.save(filepath)
+
+            # Получаем порядок каналов
+            channel_order = request.form.get('channel_order', '012')
+
+            # Обрабатываем изображение
+            result = process_image(filepath, channel_order)
+
+            if 'error' in result:
+                flash(result['error'])
+                return redirect(request.url)
+
+            return render_template('rgb_result.html',
+                                   original=filename,
+                                   swapped=result['swapped_filename'],
+                                   analysis_plot=result['analysis_plot'],
+                                   channel_order=channel_order)
+
+        except Exception as e:
+            flash(f'Ошибка при обработке изображения: {str(e)}')
+            return redirect(request.url)
+
+    return render_template('rgb_upload.html')
 
 if __name__ == "__main__":
  app.run(host='127.0.0.1',port=5000)
