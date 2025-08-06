@@ -22,9 +22,11 @@ jobs:
 
       - name: Start Flask app
         run: |
-          python flaskapp/some_app.py &  # Запуск в фоновом режиме
+          cd flaskapp
+          python some_app.py &  # Запуск в фоновом режиме
           sleep 60  
 
       - name: Run tests
         run: |
-          python flaskapp/client.py
+          cd flaskapp
+          python client.py
