@@ -1,10 +1,10 @@
 name: Run Flask App and Test Client
 
-on: [push]  # Запускать при каждом push
+on: [push]
 
 jobs:
   test:
-    runs-on: ubuntu-latest  # Используем Ubuntu
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -20,10 +20,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Start Flask app (some_app.py)
+      - name: Start Flask app
         run: |
           python some_app.py &  # Запуск в фоновом режиме
-          sleep 30  # Ждём, пока сервер запустится
+          sleep 60  
 
-      - name: Run client test (client.py)
-        run: python client.py
+      - name: Run tests
+        run: |
+          python client.py
